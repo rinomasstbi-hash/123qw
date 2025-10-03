@@ -55,7 +55,7 @@ function createPrompt(data: RPMInput): string {
        - Durasi Pertemuan: ${meetings} x (2 x 40 menit)
 
     b. **IDENTIFIKASI**
-       - Siswa: Generate deskripsi singkat karakteristik umum siswa kelas ${className} di madrasah tsanawiyah.
+       - Siswa: Generate deskripsi singkat karakteristik umum siswa kelas ${className} di madrasah tsaniyah.
        - Materi Pelajaran: ${subjectMatter}
        - Capaian Dimensi Lulusan: ${graduateDimensions.join(', ')}
        - Topik Panca Cinta: Pilih 2-3 dimensi Kurikulum Berbasis Cinta (KBC) yang paling relevan dari [Cinta Allah dan Rasul-Nya, Cinta Ilmu, Cinta Lingkungan, Cinta Diri dan Sesama, Cinta Tanah Air] berdasarkan materi pelajaran.
@@ -104,12 +104,17 @@ function createPrompt(data: RPMInput): string {
     `;
 }
 
+export const MISSING_API_KEY_ERROR = "Kunci API Gemini tidak ditemukan. Harap konfigurasikan variabel lingkungan `API_KEY` di pengaturan deployment Anda (misalnya, di Netlify: Site settings > Build & deploy > Environment).";
 
 export const generateRPM = async (data: RPMInput): Promise<string> => {
+  const apiKey = process.env.API_KEY;
+
+  if (!apiKey || apiKey.trim() === '') {
+    throw new Error(MISSING_API_KEY_ERROR);
+  }
+
   try {
-    // The polyfill in index.tsx ensures `process` exists.
-    // If process.env.API_KEY is undefined, the SDK will throw a descriptive error.
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+    const ai = new GoogleGenAI({ apiKey });
     const model = 'gemini-2.5-flash';
     const prompt = createPrompt(data);
 
@@ -129,7 +134,7 @@ export const generateRPM = async (data: RPMInput): Promise<string> => {
     console.error("Error calling Gemini API:", error);
     // Re-throw the error with a more user-friendly message, guiding them on how to fix it.
     if (error instanceof Error) {
-        throw new Error(`Terjadi masalah dengan layanan AI: ${error.message}. Pastikan Kunci API Anda telah dikonfigurasi dengan benar di pengaturan Netlify.`);
+        throw new Error(`Terjadi masalah saat berkomunikasi dengan layanan AI. Pastikan kunci API Anda valid. (Detail: ${error.message})`);
     }
     throw new Error("Gagal berkomunikasi dengan layanan AI. Terjadi kesalahan yang tidak diketahui.");
   }

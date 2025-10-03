@@ -5,7 +5,7 @@ import { Spinner } from './components/Spinner';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import type { RPMInput } from './types';
-import { generateRPM } from './services/geminiService';
+import { generateRPM, MISSING_API_KEY_ERROR } from './services/geminiService';
 
 const loadingMessages = [
   'Menganalisis tujuan pembelajaran...',
@@ -38,11 +38,24 @@ const ErrorDisplay = ({ message }: { message: string }) => (
     </div>
 );
 
+const ConfigErrorDisplay = ({ message }: { message: string }) => (
+    <div className="text-orange-800 bg-orange-100 p-4 rounded-lg border border-orange-300 flex items-start space-x-3">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 flex-shrink-0 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <div>
+            <p className="font-semibold">Konfigurasi Dibutuhkan</p>
+            <p>{message}</p>
+        </div>
+    </div>
+);
+
 
 const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [generatedRpm, setGeneratedRpm] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
+  const [isConfigError, setIsConfigError] = useState<boolean>(false);
   const [currentLoadingMessage, setCurrentLoadingMessage] = useState(loadingMessages[0]);
 
   useEffect(() => {
@@ -65,12 +78,16 @@ const App: React.FC = () => {
     setIsLoading(true);
     setGeneratedRpm('');
     setError(null);
+    setIsConfigError(false);
     try {
       const result = await generateRPM(data);
       setGeneratedRpm(result);
     } catch (e) {
       console.error(e);
       if (e instanceof Error) {
+        if (e.message === MISSING_API_KEY_ERROR) {
+            setIsConfigError(true);
+        }
         setError(e.message);
       } else {
         setError('Gagal menghasilkan RPM. Terjadi kesalahan yang tidak diketahui.');
@@ -93,7 +110,8 @@ const App: React.FC = () => {
           <div className="bg-white p-6 rounded-lg shadow-lg border border-gray-200">
              <h2 className="text-2xl font-bold text-teal-700 mb-4">Hasil Rencana Pembelajaran (RPM)</h2>
             {isLoading && <Spinner message={currentLoadingMessage} />}
-            {error && <ErrorDisplay message={error} />}
+            {error && isConfigError && <ConfigErrorDisplay message={error} />}
+            {error && !isConfigError && <ErrorDisplay message={error} />}
             {!isLoading && !generatedRpm && !error && <Placeholder />}
             {generatedRpm && <RPMOutput htmlContent={generatedRpm} />}
           </div>
