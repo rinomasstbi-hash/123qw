@@ -106,17 +106,13 @@ function createPrompt(data: RPMInput): string {
 
 
 export const generateRPM = async (data: RPMInput): Promise<string> => {
-  // Gracefully handle cases where the API key is not available in the environment.
-  // This prevents the app from crashing with a "process is not defined" error.
-  if (typeof process === 'undefined' || !process.env?.API_KEY) {
-    throw new Error("Kunci API tidak dikonfigurasi. Harap pastikan kunci API telah diatur di lingkungan Anda.");
-  }
-    
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
-  const model = 'gemini-2.5-flash';
-  const prompt = createPrompt(data);
-
   try {
+    // The polyfill in index.tsx ensures `process` exists.
+    // If process.env.API_KEY is undefined, the SDK will throw a descriptive error.
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+    const model = 'gemini-2.5-flash';
+    const prompt = createPrompt(data);
+
     const response = await ai.models.generateContent({
       model: model,
       contents: prompt,
@@ -131,6 +127,10 @@ export const generateRPM = async (data: RPMInput): Promise<string> => {
     return cleanedText;
   } catch (error) {
     console.error("Error calling Gemini API:", error);
-    throw new Error("Gagal berkomunikasi dengan layanan AI. Silakan periksa koneksi internet Anda dan coba lagi nanti.");
+    // Re-throw the error with a more user-friendly message, guiding them on how to fix it.
+    if (error instanceof Error) {
+        throw new Error(`Terjadi masalah dengan layanan AI: ${error.message}. Pastikan Kunci API Anda telah dikonfigurasi dengan benar di pengaturan Netlify.`);
+    }
+    throw new Error("Gagal berkomunikasi dengan layanan AI. Terjadi kesalahan yang tidak diketahui.");
   }
 };
