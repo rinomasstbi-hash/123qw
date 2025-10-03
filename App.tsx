@@ -70,7 +70,11 @@ const App: React.FC = () => {
       setGeneratedRpm(result);
     } catch (e) {
       console.error(e);
-      setError('Gagal menghasilkan RPM. Silakan periksa koneksi internet Anda dan coba lagi.');
+      if (e instanceof Error) {
+        setError(e.message);
+      } else {
+        setError('Gagal menghasilkan RPM. Terjadi kesalahan yang tidak diketahui.');
+      }
     } finally {
       setIsLoading(false);
     }

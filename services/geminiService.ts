@@ -106,6 +106,12 @@ function createPrompt(data: RPMInput): string {
 
 
 export const generateRPM = async (data: RPMInput): Promise<string> => {
+  // Gracefully handle cases where the API key is not available in the environment.
+  // This prevents the app from crashing with a "process is not defined" error.
+  if (typeof process === 'undefined' || !process.env?.API_KEY) {
+    throw new Error("Kunci API tidak dikonfigurasi. Harap pastikan kunci API telah diatur di lingkungan Anda.");
+  }
+    
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
   const model = 'gemini-2.5-flash';
   const prompt = createPrompt(data);
@@ -125,6 +131,6 @@ export const generateRPM = async (data: RPMInput): Promise<string> => {
     return cleanedText;
   } catch (error) {
     console.error("Error calling Gemini API:", error);
-    throw new Error("Failed to generate RPM from AI service.");
+    throw new Error("Gagal berkomunikasi dengan layanan AI. Silakan periksa koneksi internet Anda dan coba lagi nanti.");
   }
 };
