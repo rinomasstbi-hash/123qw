@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import type { RPMInput, PedagogicalPractice, GraduateDimension } from '../types';
+import { RPMInput, PedagogicalPractice, GraduateDimension } from '../types';
 import { PEDAGOGICAL_PRACTICES, GRADUATE_DIMENSIONS } from '../constants';
 
 interface RPMFormProps {
@@ -64,7 +64,7 @@ export const RPMForm: React.FC<RPMFormProps> = ({ onSubmit, isLoading }) => {
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: name === 'meetings' ? parseInt(value, 10) : value }));
+    setFormData(prev => ({ ...prev, [name]: name === 'meetings' ? parseInt(value, 10) || 1 : value }));
   }, []);
 
   const handlePracticeChange = useCallback((index: number, value: PedagogicalPractice) => {
@@ -81,6 +81,21 @@ export const RPMForm: React.FC<RPMFormProps> = ({ onSubmit, isLoading }) => {
         ? prev.graduateDimensions.filter(d => d !== dimension)
         : [...prev.graduateDimensions, dimension];
       return { ...prev, graduateDimensions: newDimensions };
+    });
+  }, []);
+  
+  const handleFillExample = useCallback(() => {
+    setFormData({
+        teacherName: 'Ahmad Fauzi, S.Pd.',
+        teacherNip: '198503152010011001',
+        className: 'VIII',
+        subject: 'Ilmu Pengetahuan Alam (IPA)',
+        learningObjectives: 'Siswa mampu mengidentifikasi organ-organ sistem pencernaan manusia dan menjelaskan fungsi masing-masing organ dengan benar.',
+        subjectMatter: 'Sistem Pencernaan Manusia',
+        language: 'Bahasa Arab',
+        meetings: 2,
+        pedagogicalPractices: [PedagogicalPractice.INQUIRY_DISCOVERY, PedagogicalPractice.PJBL],
+        graduateDimensions: [GraduateDimension.CRITICAL_REASONING, GraduateDimension.COLLABORATION, GraduateDimension.CREATIVITY],
     });
   }, []);
 
@@ -108,7 +123,9 @@ export const RPMForm: React.FC<RPMFormProps> = ({ onSubmit, isLoading }) => {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <InputField id="teacherName" label="Nama Guru" value={formData.teacherName} onChange={handleChange} />
+      {errors.teacherName && <p className="text-red-500 text-sm -mt-4">{errors.teacherName}</p>}
       <InputField id="teacherNip" label="NIP Guru" type="text" value={formData.teacherNip} onChange={handleChange} />
+      {errors.teacherNip && <p className="text-red-500 text-sm -mt-4">{errors.teacherNip}</p>}
       
       <div>
         <label htmlFor="className" className="block text-sm font-medium text-gray-700 mb-1">Kelas</label>
@@ -120,8 +137,11 @@ export const RPMForm: React.FC<RPMFormProps> = ({ onSubmit, isLoading }) => {
       </div>
 
       <InputField id="subject" label="Mata Pelajaran" value={formData.subject} onChange={handleChange} />
+      {errors.subject && <p className="text-red-500 text-sm -mt-4">{errors.subject}</p>}
       <TextareaField id="learningObjectives" label="Tujuan Pembelajaran" value={formData.learningObjectives} onChange={handleChange} />
+      {errors.learningObjectives && <p className="text-red-500 text-sm -mt-4">{errors.learningObjectives}</p>}
       <TextareaField id="subjectMatter" label="Materi Pelajaran" value={formData.subjectMatter} onChange={handleChange} />
+      {errors.subjectMatter && <p className="text-red-500 text-sm -mt-4">{errors.subjectMatter}</p>}
 
       <div>
         <label htmlFor="language" className="block text-sm font-medium text-gray-700 mb-1">Bahasa Pembuka/Penutup</label>
@@ -132,7 +152,7 @@ export const RPMForm: React.FC<RPMFormProps> = ({ onSubmit, isLoading }) => {
       </div>
       
       <InputField id="meetings" label="Jumlah Pertemuan" type="number" value={formData.meetings.toString()} onChange={handleChange} />
-       {errors.meetings && <p className="text-red-500 text-sm">{errors.meetings}</p>}
+       {errors.meetings && <p className="text-red-500 text-sm -mt-4">{errors.meetings}</p>}
       
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Praktik Pedagogis per Pertemuan</label>
@@ -156,7 +176,7 @@ export const RPMForm: React.FC<RPMFormProps> = ({ onSubmit, isLoading }) => {
         <label className="block text-sm font-medium text-gray-700 mb-1">Dimensi Lulusan (Pilih beberapa)</label>
         <div className="grid grid-cols-2 gap-2 mt-2">
           {GRADUATE_DIMENSIONS.map(dim => (
-            <label key={dim} className="flex items-center space-x-2">
+            <label key={dim} className="flex items-center space-x-2 cursor-pointer">
               <input 
                 type="checkbox"
                 checked={formData.graduateDimensions.includes(dim)}
@@ -170,13 +190,27 @@ export const RPMForm: React.FC<RPMFormProps> = ({ onSubmit, isLoading }) => {
          {errors.graduateDimensions && <p className="text-red-500 text-sm mt-2">{errors.graduateDimensions}</p>}
       </div>
 
-      <button
-        type="submit"
-        disabled={isLoading}
-        className="w-full bg-teal-600 text-white font-bold py-3 px-4 rounded-md hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
-      >
-        {isLoading ? 'Memproses...' : 'Generate RPM'}
-      </button>
+      <div className="flex flex-col sm:flex-row-reverse gap-3 pt-4">
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="w-full bg-teal-600 text-white font-bold py-3 px-4 rounded-md hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
+        >
+          {isLoading ? 'Memproses...' : 'Generate RPM'}
+        </button>
+        <button
+          type="button"
+          onClick={handleFillExample}
+          disabled={isLoading}
+          className="w-full bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        >
+         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" />
+            <path fillRule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clipRule="evenodd" />
+          </svg>
+          Isi Contoh
+        </button>
+      </div>
     </form>
   );
 };

@@ -3,6 +3,8 @@ import type { RPMInput } from '../types';
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
 
+const SYSTEM_INSTRUCTION = `Anda adalah asisten ahli dalam pembuatan Rencana Pembelajaran Mendalam (RPM) untuk kurikulum madrasah di Indonesia, khususnya untuk MTsN 4 Jombang. Tugas Anda adalah membuat dokumen RPM yang lengkap, terstruktur, dan siap pakai dalam format HTML. Ikuti struktur dan instruksi di bawah ini dengan SANGAT TELITI menggunakan Ejaan Bahasa Indonesia yang baik dan benar. Pastikan semua teks berwarna hitam atau sangat gelap agar kontrasnya tinggi dan mudah dibaca. Jangan gunakan sintaks Markdown seperti **teks tebal** di dalam output HTML Anda; sebagai gantinya, gunakan tag HTML yang sesuai seperti \`<b>\` atau \`<strong>\`.`;
+
 function createPrompt(data: RPMInput): string {
   const {
     teacherName,
@@ -22,8 +24,6 @@ function createPrompt(data: RPMInput): string {
     .join(', ');
 
   return `
-    Anda adalah asisten ahli dalam pembuatan Rencana Pembelajaran Mendalam (RPM) untuk kurikulum madrasah di Indonesia, khususnya untuk MTsN 4 Jombang.
-
     Berdasarkan input berikut:
     - Nama Guru: ${teacherName}
     - NIP Guru: ${teacherNip}
@@ -35,8 +35,6 @@ function createPrompt(data: RPMInput): string {
     - Jumlah Pertemuan: ${meetings}
     - Praktik Pedagogis per Pertemuan: ${practicesText}
     - Dimensi Lulusan: ${graduateDimensions.join(', ')}
-
-    Tugas Anda adalah membuat dokumen RPM yang lengkap, terstruktur, dan siap pakai dalam format HTML. Ikuti struktur dan instruksi di bawah ini dengan SANGAT TELITI menggunakan Ejaan Bahasa Indonesia yang baik dan benar. Pastikan semua teks berwarna hitam atau sangat gelap agar kontrasnya tinggi dan mudah dibaca. Jangan gunakan sintaks Markdown seperti **teks tebal** di dalam output HTML Anda; sebagai gantinya, gunakan tag HTML yang sesuai seperti \`<b>\` atau \`<strong>\`.
 
     **STRUKTUR OUTPUT HTML UTAMA:**
 
@@ -117,6 +115,9 @@ export const generateRPM = async (data: RPMInput): Promise<string> => {
     const response = await ai.models.generateContent({
       model: model,
       contents: prompt,
+      config: {
+        systemInstruction: SYSTEM_INSTRUCTION,
+      }
     });
     // Clean the response from markdown fences
     let cleanedText = response.text.replace(/^```html\s*/, '').replace(/\s*```$/, '');
